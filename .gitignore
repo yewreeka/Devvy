@@ -1,0 +1,118 @@
+# Created by https://www.toptal.com/developers/gitignore/api/swift,xcode
+# Edit at https://www.toptal.com/developers/gitignore?templates=swift,xcode
+
+### Swift ###
+# Xcode
+#
+# gitignore contributors: remember to update Global/Xcode.gitignore, Objective-C.gitignore & Swift.gitignore
+
+### Secrets ###
+**/Secrets.swift
+.env
+.env.local
+
+## Claude Code local settings
+.claude/settings.local.json
+
+## User settings
+xcuserdata/
+
+.obsidian
+
+## compatibility with Xcode 8 and earlier (ignoring not required starting Xcode 9)
+*.xcscmblueprint
+*.xccheckout
+
+## compatibility with Xcode 3 and earlier (ignoring not required starting Xcode 4)
+build/
+DerivedData/
+*.moved-aside
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+
+## Obj-C/Swift specific
+*.hmap
+
+## App packaging
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+## Playgrounds
+timeline.xctimeline
+playground.xcworkspace
+
+# Swift Package Manager
+.build/
+
+# CocoaPods
+# Pods/
+
+# Carthage
+Carthage/Build/
+
+# Accio dependency management
+Dependencies/
+.accio/
+
+# fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output
+
+# Bundler / fastlane gem cache
+.gems/
+.bundle/
+vendor/bundle/
+bin/
+
+# Apple-issued certificates that should not be checked in
+*.cer
+
+# Test results
+*.xcresult
+test-output.log
+
+# Code Injection
+iOSInjectionProject/
+
+### Xcode ###
+
+## Xcode 8 and earlier
+
+### Xcode Patch ###
+# xcodegen owns the Xcode project — keep generated artifacts out of git.
+*.xcodeproj/*
+!*.xcodeproj/project.pbxproj
+!*.xcodeproj/xcshareddata/
+!*.xcodeproj/project.xcworkspace/
+!*.xcworkspace/contents.xcworkspacedata
+/*.gcno
+**/xcshareddata/WorkspaceSettings.xcsettings
+
+# Claude Code temporary resources
+claude-code-resources/
+
+# End of https://www.toptal.com/developers/gitignore/api/swift,xcode
+
+# Claude Code local files
+.claude/.simulator_id
+.derivedData/
+*.profraw
+.simulator-setup.log
+.DS_Store
+
+# Runtime artifacts
+.claude/scheduled_tasks.lock
+
+# nix local cache
+.direnv
+.direnv/**
+**/.direnv/**

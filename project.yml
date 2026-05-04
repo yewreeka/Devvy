@@ -1,0 +1,91 @@
+name: Devvy
+options:
+  bundleIdPrefix: com.jarod.devvy
+  deploymentTarget:
+    iOS: "26.0"
+  developmentLanguage: en
+  createIntermediateGroups: true
+  generateEmptyDirectories: true
+
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    DEVELOPMENT_TEAM: VJ6CKUBSGW
+    CODE_SIGN_STYLE: Automatic
+    SWIFT_STRICT_CONCURRENCY: complete
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+
+targets:
+  Devvy:
+    type: application
+    platform: iOS
+    sources:
+      - path: Devvy
+      - path: Shared
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.jarod.devvy
+        INFOPLIST_FILE: Devvy/Info.plist
+        TARGETED_DEVICE_FAMILY: "1,2"
+        SUPPORTS_MACCATALYST: NO
+        CODE_SIGN_ENTITLEMENTS: Devvy/Devvy.entitlements
+        CURRENT_PROJECT_VERSION: 1
+        MARKETING_VERSION: "0.1"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        SUPPORTED_PLATFORMS: "iphoneos iphonesimulator"
+        SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: NO
+    dependencies:
+      - target: DevvyLiveActivity
+        embed: true
+        codeSign: true
+    info:
+      path: Devvy/Info.plist
+      properties:
+        CFBundleDisplayName: Devvy
+        CFBundleShortVersionString: "0.1"
+        CFBundleVersion: "1"
+        NSSupportsLiveActivities: true
+        UISupportsDocumentBrowser: false
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: true
+        UILaunchScreen:
+          UIColorName: AccentColor
+        CFBundleDocumentTypes:
+          - CFBundleTypeName: Develop Recipe
+            CFBundleTypeRole: Editor
+            LSHandlerRank: Owner
+            LSItemContentTypes: ["com.jarod.devvy.recipe"]
+        UTImportedTypeDeclarations:
+          - UTTypeIdentifier: com.jarod.devvy.recipe
+            UTTypeDescription: Develop Recipe
+            UTTypeConformsTo: ["public.json", "public.data"]
+            UTTypeTagSpecification:
+              public.filename-extension: ["rcp"]
+              public.mime-type: ["application/json"]
+
+  DevvyLiveActivity:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: DevvyLiveActivity
+      - path: Shared
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.jarod.devvy.LiveActivity
+        INFOPLIST_FILE: DevvyLiveActivity/Info.plist
+        TARGETED_DEVICE_FAMILY: "1,2"
+        CODE_SIGN_ENTITLEMENTS: DevvyLiveActivity/DevvyLiveActivity.entitlements
+        CURRENT_PROJECT_VERSION: 1
+        MARKETING_VERSION: "0.1"
+        SKIP_INSTALL: YES
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME: WidgetBackground
+    info:
+      path: DevvyLiveActivity/Info.plist
+      properties:
+        CFBundleDisplayName: Devvy Live Activity
+        CFBundleShortVersionString: "0.1"
+        CFBundleVersion: "1"
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
