@@ -11,17 +11,25 @@ struct TimerDetailView: View {
     }
 
     var body: some View {
-        Group {
-            if let session {
-                content(for: session)
-            } else {
-                ContentUnavailableView("Tank ended", systemImage: "checkmark.seal")
-                    .onAppear { dismiss() }
+        TankPresenter(session: session) {
+            Group {
+                if let session {
+                    content(for: session)
+                } else {
+                    ContentUnavailableView("Tank ended", systemImage: "checkmark.seal")
+                        .onAppear { dismiss() }
+                }
             }
+            .navigationBarTitleDisplayMode(.inline)
         }
-        .navigationBarTitleDisplayMode(.inline)
-        .onAppear { clock.start() }
-        .onDisappear { clock.stop() }
+        .onAppear {
+            clock.start()
+            NotificationDelegate.shared.setViewing(sessionId)
+        }
+        .onDisappear {
+            clock.stop()
+            NotificationDelegate.shared.clearViewing(sessionId)
+        }
     }
 
     @ViewBuilder
@@ -29,19 +37,24 @@ struct TimerDetailView: View {
         let now = clock.now
         let remaining = session.remainingNow(at: now)
 
+        // Golden-ratio-ish layout: the ring sits in the upper third (with a
+        // capped top spacer for breathing room below the floating indicator),
+        // a fixed 32pt gap separates ring and carousel, and the flex space
+        // below the carousel pushes the controls to the bottom.
         VStack(spacing: 0) {
-            ScrollView {
-                VStack(spacing: 28) {
-                    headerSection(session: session)
-                    timerSection(session: session, now: now, remaining: remaining)
-                    stepsSection(session: session)
-                    Spacer(minLength: 100)
-                }
-                .padding(.horizontal, 20)
-                .padding(.top, 16)
+            Spacer().frame(maxHeight: 24)
+            timerSection(session: session, now: now, remaining: remaining)
+            if !session.isFinished {
+                Spacer().frame(height: 32)
+                StepCarousel(session: session)
             }
-            controlsBar(session: session)
+            Spacer(minLength: 16)
+            controlsBar(session: session, now: now)
         }
+        .padding(.horizontal, 20)
+        .padding(.top, 72)
+        .padding(.bottom, 8)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background {
             LinearGradient(
                 colors: [
@@ -54,6 +67,7 @@ struct TimerDetailView: View {
             )
             .ignoresSafeArea()
         }
+        .toolbar(.hidden, for: .tabBar)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
@@ -74,33 +88,29 @@ struct TimerDetailView: View {
         .tint(session.tint)
     }
 
-    private func headerSection(session: TimerSession) -> some View {
-        VStack(spacing: 6) {
-            Text(session.tankLabel.uppercased())
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(session.tint)
-                .tracking(1.5)
-            Text(session.recipeName)
-                .font(.title2.weight(.bold))
-                .multilineTextAlignment(.center)
-        }
-        .frame(maxWidth: .infinity)
-    }
-
     private func timerSection(session: TimerSession, now: Date, remaining: TimeInterval) -> some View {
         let step = session.currentStep
         let progress = stepProgress(session: session, now: now)
         let agitating = session.currentAgitation(at: now)
+        let headsUp = session.upcomingAgitation(within: 15, at: now)
 
+        let ringSize: CGFloat = 304
+        let arcColor: Color = agitating != nil ? session.tint.intensified() : session.tint
         return VStack(spacing: 18) {
             ZStack {
                 Circle()
-                    .stroke(session.tint.opacity(0.15), lineWidth: 14)
+                    .stroke(arcColor.opacity(0.15), lineWidth: 14)
                 Circle()
                     .trim(from: 0, to: progress)
-                    .stroke(session.tint.gradient, style: StrokeStyle(lineWidth: 14, lineCap: .round))
+                    .stroke(arcColor.gradient, style: StrokeStyle(lineWidth: 14, lineCap: .round))
                     .rotationEffect(.degrees(-90))
                     .animation(.linear(duration: 0.3), value: progress)
+
+                AgitationMarkers(
+                    fractions: agitationMarkerFractions(session: session),
+                    tint: session.tint,
+                    ringSize: ringSize
+                )
 
                 VStack(spacing: 6) {
                     if session.isFinished {
@@ -110,10 +120,11 @@ struct TimerDetailView: View {
                             .symbolEffect(.bounce, value: session.isFinished)
                         Text("Done!")
                             .font(.title.weight(.bold))
+                            .foregroundStyle(session.tint.tintedInk)
                     } else if session.isPaused {
                         Text(TimeFormat.clock(remaining))
                             .font(.system(size: 64, weight: .bold, design: .rounded).monospacedDigit())
-                            .foregroundStyle(.primary)
+                            .foregroundStyle(session.tint.tintedInk)
                         Text("Paused")
                             .font(.headline)
                             .foregroundStyle(.secondary)
@@ -134,59 +145,56 @@ struct TimerDetailView: View {
                     } else {
                         CountdownText(now: now, endsAt: session.stepEndsAt)
                             .font(.system(size: 64, weight: .bold, design: .rounded).monospacedDigit())
-                            .foregroundStyle(.primary)
+                            .foregroundStyle(session.tint.tintedInk)
                             .multilineTextAlignment(.center)
-                        Text(step?.name ?? "")
-                            .font(.headline)
-                            .foregroundStyle(.secondary)
+                        if let cycle = headsUp {
+                            HStack(spacing: 6) {
+                                Image(systemName: "arrow.triangle.2.circlepath")
+                                    .font(.subheadline.weight(.semibold))
+                                    .symbolEffect(.rotate, options: .repeating)
+                                Text("Agitate in ")
+                                    .font(.headline)
+                                CountdownText(now: now, endsAt: cycle.startsAt)
+                                    .font(.headline.monospacedDigit())
+                            }
+                            .foregroundStyle(session.tint)
                             .contentTransition(.opacity)
+                        } else {
+                            Text(step?.name ?? "")
+                                .font(.headline)
+                                .foregroundStyle(.secondary)
+                                .contentTransition(.opacity)
+                        }
                     }
                 }
             }
-            .frame(width: 280, height: 280)
-            .padding(.vertical, 8)
-
-            if let step, !session.isFinished {
-                HStack(spacing: 16) {
-                    StatPill(label: "Step", value: "\(session.stepIndex + 1)/\(session.steps.count)")
-                    StatPill(label: "Duration", value: TimeFormat.clock(step.duration))
-                    if let next = session.nextStep {
-                        StatPill(label: "Next", value: next.name)
-                    }
-                }
-            }
+            .frame(width: ringSize, height: ringSize)
+            .animation(.easeInOut(duration: 0.45), value: agitating != nil)
         }
     }
 
-    private func stepsSection(session: TimerSession) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("All Steps")
-                .font(.headline)
-                .padding(.horizontal, 4)
-
-            VStack(spacing: 8) {
-                ForEach(Array(session.steps.enumerated()), id: \.element.id) { idx, step in
-                    StepRow(
-                        index: idx,
-                        step: step,
-                        state: idx < session.stepIndex ? .done :
-                               idx == session.stepIndex ? .current :
-                               .upcoming,
-                        tint: session.tint
-                    )
-                }
-            }
-            .padding(12)
-            .background {
-                RoundedRectangle(cornerRadius: 22, style: .continuous)
-                    .fill(.background.secondary)
-            }
-            .glassEffect(in: .rect(cornerRadius: 22))
+    /// Returns the position of each agitation cycle's start as a fraction
+    /// (0...1) of the current step's duration — used to plot dots on the
+    /// progress ring. Cycles that have already started but haven't ended
+    /// still show their start mark; cycles beyond the step are filtered out.
+    private func agitationMarkerFractions(session: TimerSession) -> [Double] {
+        guard let step = session.currentStep, step.duration > 0 else { return [] }
+        let anchor = session.stepLogicalStart
+        return session.agitationCycles.compactMap { cycle in
+            // Skip the initial cycle — its marker would sit at 12 o'clock,
+            // right where the progress arc begins, and reads as noise.
+            guard !cycle.isInitial else { return nil }
+            let elapsed = cycle.startsAt.timeIntervalSince(anchor)
+            let fraction = elapsed / step.duration
+            guard fraction > 0, fraction < 1 else { return nil }
+            return fraction
         }
     }
 
-    private func controlsBar(session: TimerSession) -> some View {
-        HStack(spacing: 14) {
+    private func controlsBar(session: TimerSession, now: Date) -> some View {
+        let stepElapsed = !session.isFinished && session.stepHasElapsed(at: now)
+
+        return HStack(spacing: 14) {
             if session.isFinished {
                 Button {
                     Haptics.success()
@@ -202,26 +210,28 @@ struct TimerDetailView: View {
                 .buttonStyle(.glassProminent)
                 .controlSize(.large)
             } else {
-                Button {
-                    Haptics.tap()
-                    Task {
-                        if session.isPaused {
-                            await app.resume(session)
-                        } else {
-                            await app.pause(session)
+                if !stepElapsed {
+                    Button {
+                        Haptics.tap()
+                        Task {
+                            if session.isPaused {
+                                await app.resume(session)
+                            } else {
+                                await app.pause(session)
+                            }
                         }
+                    } label: {
+                        Image(systemName: session.isPaused ? "play.fill" : "pause.fill")
+                            .font(.title3.weight(.semibold))
+                            .contentTransition(.symbolEffect(.replace))
+                            .frame(width: 28, height: 28)
                     }
-                } label: {
-                    Label(
-                        session.isPaused ? "Resume" : "Pause",
-                        systemImage: session.isPaused ? "play.fill" : "pause.fill"
-                    )
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 4)
-                    .contentTransition(.symbolEffect(.replace))
+                    .buttonStyle(.glass)
+                    .controlSize(.large)
+                    .buttonBorderShape(.circle)
+                    .accessibilityLabel(session.isPaused ? "Resume" : "Pause")
+                    .transition(.scale(scale: 0.85).combined(with: .opacity))
                 }
-                .buttonStyle(.glass)
-                .controlSize(.large)
 
                 Button {
                     Haptics.tap()
@@ -238,9 +248,8 @@ struct TimerDetailView: View {
                 .controlSize(.large)
             }
         }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 12)
-        .background(.ultraThinMaterial)
+        .padding(.vertical, 4)
+        .animation(.bouncy(duration: 0.5, extraBounce: 0.12), value: stepElapsed)
     }
 
     private func stepProgress(session: TimerSession, now: Date) -> CGFloat {
@@ -250,74 +259,122 @@ struct TimerDetailView: View {
     }
 }
 
-private struct StatPill: View {
-    let label: String
-    let value: String
+/// Small "station" dots placed on the progress ring at each agitation cycle's
+/// start. Dot fill uses the system background so they read clearly against
+/// both the dim background ring and the bright progress arc.
+private struct AgitationMarkers: View {
+    let fractions: [Double]
+    let tint: Color
+    let ringSize: CGFloat
+
+    private let dotSize: CGFloat = 5
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(label)
-                .font(.caption2.weight(.semibold))
-                .foregroundStyle(.secondary)
-                .tracking(0.8)
-            Text(value)
-                .font(.subheadline.weight(.semibold))
-                .lineLimit(1)
+        let radius = ringSize / 2
+        ZStack {
+            ForEach(Array(fractions.enumerated()), id: \.offset) { _, fraction in
+                let angle = fraction * 2 * .pi - .pi / 2
+                Circle()
+                    .fill(.background.opacity(0.75))
+                    .frame(width: dotSize, height: dotSize)
+                    .position(
+                        x: radius + radius * CGFloat(cos(angle)),
+                        y: radius + radius * CGFloat(sin(angle))
+                    )
+            }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 14)
-        .padding(.vertical, 10)
-        .background {
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(.background.secondary)
-        }
-        .glassEffect(in: .rect(cornerRadius: 14))
+        .frame(width: ringSize, height: ringSize)
+        .allowsHitTesting(false)
     }
 }
 
-private struct StepRow: View {
-    enum State { case done, current, upcoming }
+/// Horizontal step indicator: the current step sits centered in the view at
+/// full size, and the next step is fully visible to its right, scaled to
+/// 80% with reduced opacity for hierarchy. Completed steps clip off the
+/// left; the step-after-next sits off-screen right and slides in as the
+/// session advances. Card width is computed so a centered current plus a
+/// 0.8-scaled next always fits within the view with an 8pt right margin.
+private struct StepCarousel: View {
+    let session: TimerSession
 
-    let index: Int
-    let step: Step
-    let state: State
-    let tint: Color
+    private let spacing: CGFloat = 10
+    private let nextScale: CGFloat = 0.80
+    private let rightMargin: CGFloat = 8
 
     var body: some View {
-        HStack(spacing: 12) {
-            ZStack {
-                Circle()
-                    .fill(state == .current ? tint : tint.opacity(0.15))
-                    .frame(width: 30, height: 30)
-                if state == .done {
-                    Image(systemName: "checkmark")
-                        .font(.caption.weight(.bold))
-                        .foregroundStyle(.white)
-                } else {
-                    Text("\(index + 1)")
-                        .font(.caption.weight(.bold))
-                        .foregroundStyle(state == .current ? .white : tint)
+        GeometryReader { geo in
+            // Solve: W/2 + cardWidth + spacing + (nextScale × cardWidth)/2 + rightMargin = W
+            // →  cardWidth × (1 + nextScale/2) = W/2 - spacing - rightMargin
+            let cardWidth = max(96, (geo.size.width / 2 - spacing - rightMargin) / (1 + nextScale / 2))
+            let centerOffset = (geo.size.width - cardWidth) / 2
+            let stackOffset = centerOffset - CGFloat(session.stepIndex) * (cardWidth + spacing)
+
+            HStack(spacing: spacing) {
+                ForEach(Array(session.steps.enumerated()), id: \.element.id) { idx, step in
+                    StepCarouselCard(
+                        step: step,
+                        index: idx,
+                        totalSteps: session.steps.count,
+                        state: cardState(for: idx),
+                        tint: session.tint,
+                        nextScale: nextScale
+                    )
+                    .frame(width: cardWidth)
                 }
             }
+            .offset(x: stackOffset)
+            .animation(.bouncy(duration: 0.55, extraBounce: 0.08), value: session.stepIndex)
+            .frame(width: geo.size.width, alignment: .leading)
+        }
+        .frame(height: 140)
+        .clipShape(.rect)
+    }
 
-            VStack(alignment: .leading, spacing: 1) {
-                Text(step.name)
-                    .font(.subheadline.weight(state == .current ? .semibold : .regular))
-                    .lineLimit(1)
-                if state == .current {
-                    Text("Now")
-                        .font(.caption2)
-                        .foregroundStyle(tint)
-                }
-            }
+    private func cardState(for index: Int) -> StepCarouselCard.State {
+        if index < session.stepIndex { return .done }
+        if index == session.stepIndex { return .current }
+        return .upcoming
+    }
+}
 
-            Spacer()
+private struct StepCarouselCard: View {
+    enum State { case done, current, upcoming }
 
+    let step: Step
+    let index: Int
+    let totalSteps: Int
+    let state: State
+    let tint: Color
+    let nextScale: CGFloat
+
+    var body: some View {
+        VStack(spacing: 8) {
+            Text("STEP \(index + 1) OF \(totalSteps)")
+                .font(.caption2.weight(.bold))
+                .foregroundStyle(state == .current ? tint : .secondary)
+                .tracking(0.9)
+            Text(step.name)
+                .font(.title3.weight(.bold))
+                .foregroundStyle(tint.tintedInk)
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
             Text(TimeFormat.clock(step.duration))
                 .font(.subheadline.monospacedDigit())
                 .foregroundStyle(.secondary)
         }
-        .padding(.vertical, 4)
-        .opacity(state == .upcoming ? 0.7 : 1)
-        .animation(.devvyFast, value: state)
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 18)
+        .padding(.horizontal, 12)
+        .background {
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(state == .current ? tint.opacity(0.12) : Color.clear)
+                .overlay {
+                    RoundedRectangle(cornerRadius: 20, style: .continuous)
+                        .strokeBorder(tint.opacity(state == .current ? 0.25 : 0.12), lineWidth: 1)
+                }
+        }
+        .opacity(state == .current ? 1.0 : 0.5)
+        .scaleEffect(state == .current ? 1.0 : nextScale, anchor: .center)
+        .animation(.bouncy(duration: 0.45, extraBounce: 0.05), value: state)
     }
 }

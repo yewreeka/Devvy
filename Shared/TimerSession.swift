@@ -17,6 +17,10 @@ public struct TimerSession: Codable, Identifiable, Hashable, Sendable {
     public var liveActivityId: String?
     public var createdAt: Date
     public var tintHex: String?
+    /// Bath temperature (°F) the user picked at tank start. Step durations in
+    /// `steps` have already been compensated for this temperature; the value
+    /// is kept around for display only.
+    public var temperatureF: Double?
 
     public init(
         id: UUID = UUID(),
@@ -29,7 +33,8 @@ public struct TimerSession: Codable, Identifiable, Hashable, Sendable {
         pausedRemaining: TimeInterval? = nil,
         liveActivityId: String? = nil,
         createdAt: Date = .now,
-        tintHex: String? = nil
+        tintHex: String? = nil,
+        temperatureF: Double? = nil
     ) {
         self.id = id
         self.recipeId = recipeId
@@ -42,6 +47,44 @@ public struct TimerSession: Codable, Identifiable, Hashable, Sendable {
         self.liveActivityId = liveActivityId
         self.createdAt = createdAt
         self.tintHex = tintHex
+        self.temperatureF = temperatureF
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, recipeId, recipeName, tankLabel, steps, stepIndex, stepStartedAt
+        case pausedRemaining, liveActivityId, createdAt, tintHex, temperatureF
+    }
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        self.id = try c.decode(UUID.self, forKey: .id)
+        self.recipeId = try c.decode(UUID.self, forKey: .recipeId)
+        self.recipeName = try c.decode(String.self, forKey: .recipeName)
+        self.tankLabel = try c.decode(String.self, forKey: .tankLabel)
+        self.steps = try c.decode([Step].self, forKey: .steps)
+        self.stepIndex = try c.decode(Int.self, forKey: .stepIndex)
+        self.stepStartedAt = try c.decode(Date.self, forKey: .stepStartedAt)
+        self.pausedRemaining = try c.decodeIfPresent(TimeInterval.self, forKey: .pausedRemaining)
+        self.liveActivityId = try c.decodeIfPresent(String.self, forKey: .liveActivityId)
+        self.createdAt = try c.decode(Date.self, forKey: .createdAt)
+        self.tintHex = try c.decodeIfPresent(String.self, forKey: .tintHex)
+        self.temperatureF = try c.decodeIfPresent(Double.self, forKey: .temperatureF)
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(id, forKey: .id)
+        try c.encode(recipeId, forKey: .recipeId)
+        try c.encode(recipeName, forKey: .recipeName)
+        try c.encode(tankLabel, forKey: .tankLabel)
+        try c.encode(steps, forKey: .steps)
+        try c.encode(stepIndex, forKey: .stepIndex)
+        try c.encode(stepStartedAt, forKey: .stepStartedAt)
+        try c.encodeIfPresent(pausedRemaining, forKey: .pausedRemaining)
+        try c.encodeIfPresent(liveActivityId, forKey: .liveActivityId)
+        try c.encode(createdAt, forKey: .createdAt)
+        try c.encodeIfPresent(tintHex, forKey: .tintHex)
+        try c.encodeIfPresent(temperatureF, forKey: .temperatureF)
     }
 
     public var currentStep: Step? {
@@ -103,5 +146,20 @@ public struct TimerSession: Codable, Identifiable, Hashable, Sendable {
     public func currentAgitation(at moment: Date = .now) -> AgitationCycle? {
         guard !isPaused, !isFinished else { return nil }
         return agitationCycles.first { moment >= $0.startsAt && moment < $0.endsAt }
+    }
+
+    /// The next agitation cycle whose start is within `leadSeconds`. Used to
+    /// drive an "Agitate in 0:15" heads-up before each cycle. Returns nil
+    /// while currently agitating, paused, or finished.
+    public func upcomingAgitation(
+        within leadSeconds: TimeInterval,
+        at moment: Date = .now
+    ) -> AgitationCycle? {
+        guard !isPaused, !isFinished else { return nil }
+        guard currentAgitation(at: moment) == nil else { return nil }
+        return agitationCycles.first { cycle in
+            let lead = cycle.startsAt.timeIntervalSince(moment)
+            return lead > 0 && lead <= leadSeconds
+        }
     }
 }

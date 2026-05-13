@@ -17,6 +17,14 @@ struct RecipeEditorView: View {
                 }
 
                 Section {
+                    TemperatureField(temperatureF: $recipe.baseTemperatureF)
+                } header: {
+                    Text("Development Temperature")
+                } footer: {
+                    Text("The temperature these step times are calibrated for. When starting a tank, you can pick a different temperature and the developer step is adjusted automatically.")
+                }
+
+                Section {
                     ForEach($recipe.steps) { $step in
                         StepEditorRow(step: $step)
                     }
@@ -114,6 +122,50 @@ private struct StepEditorRow: View {
                 .lineLimit(1...3)
         }
         .padding(.vertical, 6)
+    }
+}
+
+/// Stepper-driven temperature picker. Fahrenheit primary, Celsius shown as a
+/// subtitle. Range 50–90°F covers all practical darkroom development.
+struct TemperatureField: View {
+    @Binding var temperatureF: Double
+
+    private var celsius: Double { TempCompensation.celsius(fromFahrenheit: temperatureF) }
+
+    private var fBinding: Binding<Double> {
+        Binding(
+            get: { temperatureF },
+            set: { temperatureF = min(90, max(50, $0)) }
+        )
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .firstTextBaseline) {
+                Text("Temperature")
+                    .font(.subheadline.weight(.semibold))
+                Spacer()
+                HStack(alignment: .lastTextBaseline, spacing: 6) {
+                    Text(temperatureF.formatted(.number.precision(.fractionLength(0...1))))
+                        .font(.title2.weight(.semibold).monospacedDigit())
+                        .contentTransition(.numericText(value: temperatureF))
+                    Text("°F")
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                }
+            }
+            HStack {
+                Text("\(celsius.formatted(.number.precision(.fractionLength(0...1))))°C")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .contentTransition(.numericText(value: celsius))
+                Spacer()
+                Stepper(value: fBinding, in: 50...90, step: 1) { EmptyView() }
+                    .labelsHidden()
+            }
+        }
+        .padding(.vertical, 4)
+        .animation(.devvyFast, value: temperatureF)
     }
 }
 

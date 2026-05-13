@@ -45,10 +45,32 @@ public struct DevvyActivityAttributes: ActivityAttributes {
         public var isPaused: Bool { pausedRemaining != nil }
         public var isFinished: Bool { stepIndex >= stepCount }
 
+        /// True when the current step's wall-clock window has ended but the
+        /// session hasn't advanced yet. While elapsed, the pause control is
+        /// hidden everywhere — there's nothing meaningful left to pause.
+        public func stepHasElapsed(at moment: Date) -> Bool {
+            guard !isPaused, !isFinished else { return false }
+            return moment >= stepEndsAt
+        }
+
         /// Cycle currently in progress at `moment`, if any.
         public func currentAgitation(at moment: Date) -> AgitationCycle? {
             guard !isPaused, !isFinished else { return nil }
             return agitationCycles.first { moment >= $0.startsAt && moment < $0.endsAt }
+        }
+
+        /// Next cycle whose start is within `leadSeconds` of `moment`. Drives
+        /// the "Agitate in 0:15" heads-up shown in the lock-screen card.
+        public func upcomingAgitation(
+            within leadSeconds: TimeInterval,
+            at moment: Date
+        ) -> AgitationCycle? {
+            guard !isPaused, !isFinished else { return nil }
+            guard currentAgitation(at: moment) == nil else { return nil }
+            return agitationCycles.first { cycle in
+                let lead = cycle.startsAt.timeIntervalSince(moment)
+                return lead > 0 && lead <= leadSeconds
+            }
         }
     }
 

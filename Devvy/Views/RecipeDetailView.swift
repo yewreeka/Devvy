@@ -77,6 +77,11 @@ struct RecipeDetailView: View {
             HStack(spacing: 12) {
                 StatPillSmall(label: "Steps", value: "\(recipe.steps.count)", systemImage: "list.number")
                 StatPillSmall(label: "Total", value: TimeFormat.compact(recipe.totalDuration), systemImage: "clock")
+                StatPillSmall(
+                    label: "Temp",
+                    value: "\(recipe.baseTemperatureF.formatted(.number.precision(.fractionLength(0...1))))°F",
+                    systemImage: "thermometer.medium"
+                )
             }
             if !recipe.notes.isEmpty {
                 Text(recipe.notes)

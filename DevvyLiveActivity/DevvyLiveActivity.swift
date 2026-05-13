@@ -69,7 +69,7 @@ struct DevvyLiveActivity: Widget {
         context: ActivityViewContext<DevvyActivityAttributes>,
         expanded: Bool
     ) -> some View {
-        if context.state.isFinished {
+        if context.state.isFinished || context.state.stepHasElapsed(at: .now) {
             EmptyView()
         } else if context.state.isPaused {
             Button(intent: ResumeTimerIntent(sessionId: context.attributes.sessionId)) {
@@ -121,6 +121,7 @@ private struct LockScreenView: View {
         // transitions the inner Text(timerInterval:) self-updates.
         TimelineView(.explicit(transitionDates(for: state))) { timeline in
             let currentAgit = state.currentAgitation(at: timeline.date)
+            let headsUp = state.upcomingAgitation(within: 15, at: timeline.date)
 
             VStack(alignment: .leading, spacing: 8) {
                 HStack(alignment: .firstTextBaseline) {
@@ -158,9 +159,21 @@ private struct LockScreenView: View {
                                 .font(.title3.weight(.bold))
                                 .foregroundStyle(.white)
                                 .lineLimit(1)
-                            Text("Step \(state.stepIndex + 1) of \(state.stepCount)")
-                                .font(.caption2)
-                                .foregroundStyle(.white.opacity(0.6))
+                            if let cycle = headsUp {
+                                HStack(spacing: 4) {
+                                    Image(systemName: "bell.badge")
+                                        .font(.caption2)
+                                    Text("Agitate in ")
+                                        .font(.caption2)
+                                    CountdownText(now: timeline.date, endsAt: cycle.startsAt)
+                                        .font(.caption2.monospacedDigit())
+                                }
+                                .foregroundStyle(.tint)
+                            } else {
+                                Text("Step \(state.stepIndex + 1) of \(state.stepCount)")
+                                    .font(.caption2)
+                                    .foregroundStyle(.white.opacity(0.6))
+                            }
                         }
                     }
                     Spacer()
@@ -187,18 +200,21 @@ private struct LockScreenView: View {
                         }
                         .tint(.accentColor)
                     } else {
-                        if state.isPaused {
-                            Button(intent: ResumeTimerIntent(sessionId: context.attributes.sessionId)) {
-                                Label("Resume", systemImage: "play.fill")
-                                    .frame(maxWidth: .infinity)
+                        let stepElapsed = state.stepHasElapsed(at: timeline.date)
+                        if !stepElapsed {
+                            if state.isPaused {
+                                Button(intent: ResumeTimerIntent(sessionId: context.attributes.sessionId)) {
+                                    Label("Resume", systemImage: "play.fill")
+                                        .frame(maxWidth: .infinity)
+                                }
+                                .tint(.green)
+                            } else {
+                                Button(intent: PauseTimerIntent(sessionId: context.attributes.sessionId)) {
+                                    Label("Pause", systemImage: "pause.fill")
+                                        .frame(maxWidth: .infinity)
+                                }
+                                .tint(.orange)
                             }
-                            .tint(.green)
-                        } else {
-                            Button(intent: PauseTimerIntent(sessionId: context.attributes.sessionId)) {
-                                Label("Pause", systemImage: "pause.fill")
-                                    .frame(maxWidth: .infinity)
-                            }
-                            .tint(.orange)
                         }
 
                         Button(intent: NextStepIntent(sessionId: context.attributes.sessionId)) {
@@ -220,12 +236,14 @@ private struct LockScreenView: View {
         }
     }
 
-    /// Dates at which the lock-screen view should re-render: the boundaries
-    /// of every agitation cycle plus the step end. Includes `.now` as a
-    /// floor so `TimelineView` always has at least one entry.
+    /// Dates at which the lock-screen view should re-render: heads-up start
+    /// (cycle.startsAt - 15s), each agitation cycle's start + end, and the
+    /// step end. Includes `.now` as a floor so `TimelineView` always has at
+    /// least one entry.
     private func transitionDates(for state: DevvyActivityAttributes.ContentState) -> [Date] {
         var dates: [Date] = [.now]
         for cycle in state.agitationCycles {
+            dates.append(cycle.startsAt.addingTimeInterval(-15))
             dates.append(cycle.startsAt)
             dates.append(cycle.endsAt)
         }

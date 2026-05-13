@@ -8,6 +8,7 @@ struct DevvyApp: App {
 
     init() {
         SeedRecipes.runIfNeeded()
+        UNUserNotificationCenter.current().delegate = NotificationDelegate.shared
     }
 
     var body: some Scene {

@@ -7,6 +7,10 @@ public struct Recipe: Codable, Identifiable, Hashable, Sendable {
     public var steps: [Step]
     public var createdAt: Date
     public var updatedAt: Date
+    /// Temperature (°F) for which `steps[0].duration` was calibrated. Used to
+    /// adjust the developer step when a tank is started at a different
+    /// temperature. Defaults to 68°F (20°C), the canonical darkroom baseline.
+    public var baseTemperatureF: Double
 
     public init(
         id: UUID = UUID(),
@@ -14,7 +18,8 @@ public struct Recipe: Codable, Identifiable, Hashable, Sendable {
         notes: String = "",
         steps: [Step] = [],
         createdAt: Date = .now,
-        updatedAt: Date = .now
+        updatedAt: Date = .now,
+        baseTemperatureF: Double = 68
     ) {
         self.id = id
         self.name = name
@@ -22,10 +27,37 @@ public struct Recipe: Codable, Identifiable, Hashable, Sendable {
         self.steps = steps
         self.createdAt = createdAt
         self.updatedAt = updatedAt
+        self.baseTemperatureF = baseTemperatureF
     }
 
     public var totalDuration: TimeInterval {
         steps.reduce(0) { $0 + $1.duration }
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, name, notes, steps, createdAt, updatedAt, baseTemperatureF
+    }
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        self.id = try c.decode(UUID.self, forKey: .id)
+        self.name = try c.decode(String.self, forKey: .name)
+        self.notes = try c.decode(String.self, forKey: .notes)
+        self.steps = try c.decode([Step].self, forKey: .steps)
+        self.createdAt = try c.decode(Date.self, forKey: .createdAt)
+        self.updatedAt = try c.decode(Date.self, forKey: .updatedAt)
+        self.baseTemperatureF = try c.decodeIfPresent(Double.self, forKey: .baseTemperatureF) ?? 68
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(id, forKey: .id)
+        try c.encode(name, forKey: .name)
+        try c.encode(notes, forKey: .notes)
+        try c.encode(steps, forKey: .steps)
+        try c.encode(createdAt, forKey: .createdAt)
+        try c.encode(updatedAt, forKey: .updatedAt)
+        try c.encode(baseTemperatureF, forKey: .baseTemperatureF)
     }
 }
 
@@ -203,6 +235,11 @@ extension Recipe {
         }
         let name = (meta["name"] as? String) ?? "Untitled"
         let notes = (meta["description"] as? String) ?? ""
+        let baseF: Double = {
+            if let v = meta["baseTemperatureF"] as? Double { return v }
+            if let v = meta["baseTemperatureF"] as? Int { return Double(v) }
+            return 68
+        }()
 
         let steps: [Step] = rawSteps.map { dict in
             Step(
@@ -216,11 +253,15 @@ extension Recipe {
             )
         }.sorted { $0.order < $1.order }
 
-        return Recipe(name: name, notes: notes, steps: steps)
+        return Recipe(name: name, notes: notes, steps: steps, baseTemperatureF: baseF)
     }
 
     public func encodeRCP() throws -> Data {
-        let meta: [String: Any] = ["name": name, "description": notes]
+        let meta: [String: Any] = [
+            "name": name,
+            "description": notes,
+            "baseTemperatureF": baseTemperatureF,
+        ]
         let stepDicts: [[String: Any]] = steps.enumerated().map { idx, step in
             var dict: [String: Any] = [
                 "order": idx,
@@ -237,6 +278,45 @@ extension Recipe {
         }
         let outer: [Any] = [meta, stepDicts]
         return try JSONSerialization.data(withJSONObject: outer, options: [.prettyPrinted])
+    }
+}
+
+// MARK: - Temperature compensation
+
+/// Time/temperature compensation matching Ilford's *Film Development
+/// Time/Temperature Compensation Chart* (April 2002), which is a Q10 = 2.5
+/// rate model:
+///   t_new = t_old * 2.5 ^ (-ΔT_C / 10)
+/// where ΔT_C is the temperature *increase* in Celsius. Warmer bath →
+/// shorter time; cooler bath → longer. Verified against the chart's worked
+/// example (8:00 @ 20°C → 5:30 @ 24°C ≈ 5:33 calculated) and several other
+/// rows; matches within the chart's 15-second rounding.
+public enum TempCompensation {
+    /// Q10 coefficient — rate ratio for a 10°C temperature change.
+    public static let q10: Double = 2.5
+
+    /// Below this many seconds, Ilford warns about uneven development.
+    public static let minimumRecommendedDeveloperSeconds: TimeInterval = 5 * 60
+
+    public static func celsius(fromFahrenheit f: Double) -> Double {
+        (f - 32) * 5.0 / 9.0
+    }
+
+    public static func fahrenheit(fromCelsius c: Double) -> Double {
+        c * 9.0 / 5.0 + 32
+    }
+
+    /// Scale factor to apply to a baseline duration when developing at
+    /// `actualF` instead of `baseF` (both in °F).
+    public static func factor(baseF: Double, actualF: Double) -> Double {
+        let deltaC = celsius(fromFahrenheit: actualF) - celsius(fromFahrenheit: baseF)
+        return pow(q10, -deltaC / 10.0)
+    }
+
+    /// Adjusted duration (seconds) for `baseSeconds` when developing at
+    /// `actualF` instead of `baseF`.
+    public static func adjustedDuration(_ baseSeconds: TimeInterval, baseF: Double, actualF: Double) -> TimeInterval {
+        baseSeconds * factor(baseF: baseF, actualF: actualF)
     }
 }
 

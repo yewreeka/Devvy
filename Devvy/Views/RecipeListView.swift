@@ -80,6 +80,29 @@ struct RecipeListView: View {
                 NavigationLink(value: recipe.id) {
                     RecipeRow(recipe: recipe)
                 }
+                .swipeActions(edge: .leading, allowsFullSwipe: true) {
+                    Button {
+                        Haptics.tap()
+                        app.duplicateRecipe(recipe)
+                    } label: {
+                        Label("Duplicate", systemImage: "doc.on.doc")
+                    }
+                    .tint(.blue)
+                }
+                .contextMenu {
+                    Button {
+                        Haptics.tap()
+                        app.duplicateRecipe(recipe)
+                    } label: {
+                        Label("Duplicate", systemImage: "doc.on.doc")
+                    }
+                    Button(role: .destructive) {
+                        Haptics.warning()
+                        app.deleteRecipe(recipe)
+                    } label: {
+                        Label("Delete", systemImage: "trash")
+                    }
+                }
             }
             .onDelete { indexSet in
                 Haptics.tap()

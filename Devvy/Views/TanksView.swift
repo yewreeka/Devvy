@@ -4,10 +4,11 @@ struct TanksView: View {
     @Environment(AppState.self) private var app
     @State private var showingStart = false
     @State private var heartbeat = HeartbeatClock()
+    @State private var path: [UUID] = []
     @Namespace private var ns
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             Group {
                 if app.sessions.isEmpty {
                     EmptyTanksView { showingStart = true }
@@ -28,7 +29,14 @@ struct TanksView: View {
                 }
             }
             .sheet(isPresented: $showingStart) {
-                StartTankSheet()
+                StartTankSheet { newSessionId in
+                    // Auto-navigate when the new tank is the only one running
+                    // — saves the user a tap when there's only one thing to
+                    // look at anyway.
+                    if app.sessions.count == 1 {
+                        path = [newSessionId]
+                    }
+                }
             }
         }
         .environment(heartbeat)
@@ -57,10 +65,13 @@ struct TanksView: View {
             .animation(.devvy, value: app.sessions.map(\.id))
         }
         .navigationDestination(for: UUID.self) { id in
-            if let session = app.sessions.first(where: { $0.id == id }) {
-                TimerDetailView(sessionId: session.id)
-                    .navigationTransition(.zoom(sourceID: session.id, in: ns))
-            }
+            // Always push the detail view — when the session disappears (e.g.
+            // finishing the last step deletes it), TimerDetailView's empty
+            // state pops back. Conditioning the destination here on
+            // `app.sessions.first(...)` makes SwiftUI render an EmptyView,
+            // leaving a blank screen.
+            TimerDetailView(sessionId: id)
+                .navigationTransition(.zoom(sourceID: id, in: ns))
         }
     }
 

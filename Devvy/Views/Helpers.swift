@@ -1,6 +1,36 @@
 import SwiftUI
+import UIKit
 
 extension Color {
+    /// Returns the color with saturation and brightness pushed up — used to
+    /// signal "active agitation" while keeping each tank's identity hue.
+    /// Going through UIColor's HSB lets us preserve the user's chosen hue
+    /// (which a flat red/orange overlay wouldn't).
+    func intensified(saturationBoost: CGFloat = 1.35, brightnessBoost: CGFloat = 1.08) -> Color {
+        var h: CGFloat = 0, s: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        UIColor(self).getHue(&h, saturation: &s, brightness: &b, alpha: &a)
+        return Color(
+            hue: Double(h),
+            saturation: Double(min(1.0, s * saturationBoost)),
+            brightness: Double(min(1.0, b * brightnessBoost)),
+            opacity: Double(a)
+        )
+    }
+
+    /// Adaptive "tinted ink" — substitute for `.primary` text inside
+    /// tank-tinted views. Light mode: deep tinted color (brightness ~0.28)
+    /// where the hue clearly reads but the text still feels near-black.
+    /// Dark mode: off-white (~0.96) with a hint of the hue.
+    var tintedInk: Color {
+        var h: CGFloat = 0, s: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        UIColor(self).getHue(&h, saturation: &s, brightness: &b, alpha: &a)
+        return Color(uiColor: UIColor { trait in
+            trait.userInterfaceStyle == .dark
+                ? UIColor(hue: h, saturation: 0.18, brightness: 0.96, alpha: a)
+                : UIColor(hue: h, saturation: 0.85, brightness: 0.28, alpha: a)
+        })
+    }
+
     init(hex: String) {
         var s = hex.trimmingCharacters(in: .whitespacesAndNewlines)
         if s.hasPrefix("#") { s.removeFirst() }

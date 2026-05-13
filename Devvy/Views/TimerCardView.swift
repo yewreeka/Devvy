@@ -13,7 +13,9 @@ struct TimerCardView: View {
         let stepName = session.currentStep?.name ?? "Done"
         let progress = stepProgress(now: now)
         let agitating = session.currentAgitation(at: now)
+        let headsUp = session.upcomingAgitation(within: 15, at: now)
 
+        VStack(spacing: 12) {
         HStack(spacing: 16) {
             // Progress ring with step number.
             ZStack {
@@ -63,12 +65,27 @@ struct TimerCardView: View {
                 } else {
                     Text(stepName)
                         .font(.title3.weight(.semibold))
+                        .foregroundStyle(session.tint.tintedInk)
                         .lineLimit(1)
                         .contentTransition(.opacity)
-                    Text(session.recipeName)
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
+                    if let cycle = headsUp {
+                        HStack(spacing: 4) {
+                            Image(systemName: "arrow.triangle.2.circlepath")
+                                .font(.caption2.weight(.semibold))
+                                .symbolEffect(.rotate, options: .repeating)
+                            Text("Agitate in ")
+                                .font(.footnote)
+                            CountdownText(now: now, endsAt: cycle.startsAt)
+                                .font(.footnote.monospacedDigit())
+                        }
+                        .foregroundStyle(session.tint)
                         .lineLimit(1)
+                    } else {
+                        Text(session.recipeName)
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
                 }
             }
 
@@ -92,7 +109,7 @@ struct TimerCardView: View {
                 } else {
                     CountdownText(now: now, endsAt: session.stepEndsAt)
                         .font(.system(.title2, design: .rounded).weight(.semibold).monospacedDigit())
-                        .foregroundStyle(.primary)
+                        .foregroundStyle(session.tint.tintedInk)
                         .multilineTextAlignment(.trailing)
                 }
 
@@ -104,6 +121,51 @@ struct TimerCardView: View {
                 }
             }
             .frame(minWidth: 78, alignment: .trailing)
+        }
+
+        if !session.isFinished {
+            let stepElapsed = session.stepHasElapsed(at: now)
+            HStack(spacing: 10) {
+                if !stepElapsed {
+                    Button {
+                        Haptics.tap()
+                        Task {
+                            if session.isPaused {
+                                await app.resume(session)
+                            } else {
+                                await app.pause(session)
+                            }
+                        }
+                    } label: {
+                        Label(
+                            session.isPaused ? "Resume" : "Pause",
+                            systemImage: session.isPaused ? "play.fill" : "pause.fill"
+                        )
+                        .frame(maxWidth: .infinity)
+                        .contentTransition(.symbolEffect(.replace))
+                    }
+                    .buttonStyle(.glass)
+                    .controlSize(.small)
+                    .buttonBorderShape(.capsule)
+                    .transition(.scale(scale: 0.85).combined(with: .opacity))
+                }
+
+                Button {
+                    Haptics.tap()
+                    Task { await app.advance(session) }
+                } label: {
+                    Label(
+                        session.stepIndex + 1 >= session.steps.count ? "Finish" : "Next",
+                        systemImage: "forward.end.fill"
+                    )
+                    .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.glassProminent)
+                .controlSize(.small)
+                .buttonBorderShape(.capsule)
+            }
+            .animation(.bouncy(duration: 0.5, extraBounce: 0.12), value: stepElapsed)
+        }
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)

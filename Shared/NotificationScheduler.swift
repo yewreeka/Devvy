@@ -35,6 +35,20 @@ public enum NotificationScheduler {
             interruption: .active
         )
 
+        // 1.5. Heads-up 10s before end (only if there's room in the step for
+        // it to fire before end).
+        let warnDelay = remaining - 10
+        if warnDelay > 0 {
+            schedule(
+                id: prefix + "endwarn",
+                title: "\(session.tankLabel) — 10s left",
+                body: step.name,
+                after: warnDelay,
+                sound: .default,
+                interruption: .active
+            )
+        }
+
         // 2. A chime at the start of each *recurring* agitation cycle. The
         // initial agitation gets no chime (the user just tapped Start, they
         // know it began). The Live Activity / app UI then takes over and
