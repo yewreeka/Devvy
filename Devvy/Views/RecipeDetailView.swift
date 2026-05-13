@@ -24,17 +24,34 @@ struct RecipeDetailView: View {
 
     @ViewBuilder
     private func content(_ recipe: Recipe) -> some View {
-        ScrollView {
-            VStack(spacing: 20) {
-                header(recipe)
-                stepsSection(recipe)
+        TankPresenter(indicator: TankIndicator(recipe: recipe)) {
+            Form {
+                if !recipe.notes.isEmpty {
+                    Section {
+                        Text(recipe.notes)
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                Section("Steps (\(recipe.steps.count))") {
+                    ForEach(Array(recipe.steps.enumerated()), id: \.element.id) { idx, step in
+                        StepCard(index: idx, step: step)
+                    }
+                }
+                Section {
+                    HStack {
+                        Text("Total")
+                            .font(.subheadline.weight(.semibold))
+                        Spacer()
+                        Text(TimeFormat.compact(recipe.totalDuration))
+                            .font(.subheadline.weight(.semibold).monospacedDigit())
+                    }
+                }
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 12)
-            .padding(.bottom, 100)
+            .navigationTitle("")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(.hidden, for: .navigationBar)
         }
-        .navigationTitle(recipe.name)
-        .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
@@ -72,78 +89,6 @@ struct RecipeDetailView: View {
         }
     }
 
-    private func header(_ recipe: Recipe) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 12) {
-                StatPillSmall(label: "Steps", value: "\(recipe.steps.count)", systemImage: "list.number")
-                StatPillSmall(label: "Total", value: TimeFormat.compact(recipe.totalDuration), systemImage: "clock")
-                StatPillSmall(
-                    label: "Temp",
-                    value: "\(recipe.baseTemperatureF.formatted(.number.precision(.fractionLength(0...1))))°F",
-                    systemImage: "thermometer.medium"
-                )
-            }
-            if !recipe.notes.isEmpty {
-                Text(recipe.notes)
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-                    .padding(14)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background {
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .fill(.background.secondary)
-                    }
-                    .glassEffect(in: .rect(cornerRadius: 16))
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    private func stepsSection(_ recipe: Recipe) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("Steps")
-                .font(.headline)
-                .padding(.horizontal, 4)
-            VStack(spacing: 8) {
-                ForEach(Array(recipe.steps.enumerated()), id: \.element.id) { idx, step in
-                    HStack(spacing: 14) {
-                        ZStack {
-                            Circle().fill(.tint.opacity(0.18))
-                                .frame(width: 32, height: 32)
-                            Text("\(idx + 1)")
-                                .font(.caption.weight(.bold))
-                                .foregroundStyle(.tint)
-                        }
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(step.name).font(.subheadline.weight(.semibold))
-                            HStack(spacing: 6) {
-                                if step.initialAgitation > 0 {
-                                    Label("Agitate \(step.initialAgitation)s at start", systemImage: "play.circle")
-                                        .font(.caption2)
-                                        .foregroundStyle(.secondary)
-                                }
-                                if step.agitationInterval > 0, step.agitationDuration > 0 {
-                                    Label("\(step.agitationDuration)s every \(step.agitationInterval)s", systemImage: "arrow.triangle.2.circlepath")
-                                        .font(.caption2)
-                                        .foregroundStyle(.secondary)
-                                }
-                            }
-                        }
-                        Spacer()
-                        Text(TimeFormat.clock(step.duration))
-                            .font(.subheadline.monospacedDigit())
-                            .foregroundStyle(.secondary)
-                    }
-                    .padding(12)
-                    .background {
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .fill(.background.secondary)
-                    }
-                    .glassEffect(in: .rect(cornerRadius: 14))
-                }
-            }
-        }
-    }
 }
 
 private struct StatPillSmall: View {
@@ -159,9 +104,11 @@ private struct StatPillSmall: View {
                 Text(label).font(.caption2).foregroundStyle(.secondary)
                 Text(value).font(.subheadline.weight(.semibold))
             }
+            Spacer(minLength: 0)
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .background {
             RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .fill(.background.secondary)

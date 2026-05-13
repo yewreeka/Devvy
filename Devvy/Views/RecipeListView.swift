@@ -1,11 +1,8 @@
 import SwiftUI
-import UniformTypeIdentifiers
 
 struct RecipeListView: View {
     @Environment(AppState.self) private var app
-    @State private var showingImporter = false
     @State private var newRecipe: Recipe?
-    @State private var importError: String?
 
     var body: some View {
         NavigationStack {
@@ -14,34 +11,24 @@ struct RecipeListView: View {
                     ContentUnavailableView {
                         Label("No Recipes", systemImage: "book.pages")
                     } description: {
-                        Text("Import a .rcp file from the Develop app, or create a new recipe.")
+                        Text("Create a new recipe to get started.")
                     } actions: {
-                        HStack {
-                            Button { showingImporter = true } label: {
-                                Label("Import .rcp", systemImage: "square.and.arrow.down")
-                            }
-                            .buttonStyle(.glass)
-
-                            Button { newRecipe = Recipe(name: "New Recipe") } label: {
-                                Label("New", systemImage: "plus")
-                            }
-                            .buttonStyle(.glassProminent)
+                        Button {
+                            newRecipe = Recipe(name: "New Recipe")
+                        } label: {
+                            Label("New Recipe", systemImage: "plus")
                         }
+                        .buttonStyle(.glassProminent)
                     }
                 } else {
                     list
                 }
             }
-            .navigationTitle("Recipes")
+            .navigationTitle("Your recipes")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Menu {
-                        Button("New Recipe", systemImage: "plus") {
-                            newRecipe = Recipe(name: "New Recipe")
-                        }
-                        Button("Import .rcp…", systemImage: "square.and.arrow.down") {
-                            showingImporter = true
-                        }
+                    Button {
+                        newRecipe = Recipe(name: "New Recipe")
                     } label: {
                         Image(systemName: "plus")
                     }
@@ -53,23 +40,8 @@ struct RecipeListView: View {
                     RecipeDetailView(recipeId: recipe.id)
                 }
             }
-            .fileImporter(
-                isPresented: $showingImporter,
-                allowedContentTypes: Self.recipeContentTypes,
-                allowsMultipleSelection: true
-            ) { result in
-                handleImport(result)
-            }
             .sheet(item: $newRecipe) { recipe in
                 RecipeEditorView(recipe: recipe, isNew: true)
-            }
-            .alert("Import failed", isPresented: Binding(
-                get: { importError != nil },
-                set: { if !$0 { importError = nil } }
-            )) {
-                Button("OK") { importError = nil }
-            } message: {
-                Text(importError ?? "")
             }
         }
     }
@@ -116,31 +88,6 @@ struct RecipeListView: View {
         .animation(.devvyFast, value: app.recipes.map(\.id))
     }
 
-    static var recipeContentTypes: [UTType] {
-        var types = [UTType.json]
-        if let custom = UTType("com.jarod.devvy.recipe") { types.insert(custom, at: 0) }
-        return types
-    }
-
-    private func handleImport(_ result: Result<[URL], Error>) {
-        switch result {
-        case .success(let urls):
-            for url in urls {
-                let access = url.startAccessingSecurityScopedResource()
-                defer { if access { url.stopAccessingSecurityScopedResource() } }
-                do {
-                    let data = try Data(contentsOf: url)
-                    _ = try app.importRecipe(from: data)
-                    Haptics.success()
-                } catch {
-                    importError = error.localizedDescription
-                    Haptics.warning()
-                }
-            }
-        case .failure(let error):
-            importError = error.localizedDescription
-        }
-    }
 }
 
 private struct RecipeRow: View {

@@ -16,7 +16,8 @@ struct TanksView: View {
                     sessionsList
                 }
             }
-            .navigationTitle("Tanks")
+            .navigationTitle("")
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
@@ -127,37 +128,17 @@ private struct EmptyTanksView: View {
     let onStart: () -> Void
 
     var body: some View {
-        VStack(spacing: 24) {
-            ZStack {
-                Circle()
-                    .fill(.tint.opacity(0.12))
-                    .frame(width: 160, height: 160)
-                Image(systemName: "timer")
-                    .font(.system(size: 64, weight: .light))
-                    .foregroundStyle(.tint)
-                    .symbolEffect(.pulse, options: .repeating)
-            }
-
-            VStack(spacing: 6) {
-                Text("No tanks running")
-                    .font(.title2.weight(.semibold))
-                Text("Start a recipe to begin developing.")
-                    .foregroundStyle(.secondary)
-            }
-
-            Button {
-                Haptics.tap()
-                onStart()
-            } label: {
-                Label("Start a Tank", systemImage: "plus.circle.fill")
-                    .font(.headline)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-            }
-            .buttonStyle(.glassProminent)
-            .controlSize(.large)
+        Button {
+            Haptics.tap()
+            onStart()
+        } label: {
+            Label("Start a Tank", systemImage: "plus.circle.fill")
+                .font(.headline)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
         }
-        .padding()
+        .buttonStyle(.glassProminent)
+        .controlSize(.large)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }

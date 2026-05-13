@@ -11,7 +11,7 @@ struct TimerDetailView: View {
     }
 
     var body: some View {
-        TankPresenter(session: session) {
+        TankPresenter(indicator: session.map { TankIndicator(session: $0) }) {
             Group {
                 if let session {
                     content(for: session)
@@ -58,12 +58,12 @@ struct TimerDetailView: View {
         .background {
             LinearGradient(
                 colors: [
-                    session.tint.opacity(0.18),
-                    session.tint.opacity(0.05),
-                    .clear
+                    session.tint.opacity(0.28),
+                    session.tint.opacity(0.12),
+                    session.tint.opacity(0.04),
                 ],
                 startPoint: .top,
-                endPoint: .center
+                endPoint: .bottom
             )
             .ignoresSafeArea()
         }

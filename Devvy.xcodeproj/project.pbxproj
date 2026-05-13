@@ -16,6 +16,7 @@
 		588C93F3AC6D947A19B844DB /* SharedStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F024F61C7AAB442ED7216F0 /* SharedStore.swift */; };
 		5C380385A699FC5A201722B9 /* Recipe.swift in Sources */ = {isa = PBXBuildFile; fileRef = C086198FF1D4923F9F965FCA /* Recipe.swift */; };
 		690C72572604BD54A683081D /* LiveActivityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46F1928A5FC3519B43AFB874 /* LiveActivityManager.swift */; };
+		6C896652EB285BECF36490A9 /* StepCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9019CA5420C610BE396EB480 /* StepCard.swift */; };
 		6CEFA69430614C2B861900C3 /* SharedStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F024F61C7AAB442ED7216F0 /* SharedStore.swift */; };
 		8B4934DB104F7B4F3688327E /* XTOL_1_1_250.rcp in Resources */ = {isa = PBXBuildFile; fileRef = 8A8739520C25479CD6B75429 /* XTOL_1_1_250.rcp */; };
 		948A68B0AF93A0685A788912 /* TanksView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB7F08D8645A356F685317AF /* TanksView.swift */; };
@@ -90,6 +91,7 @@
 		8A668AD8585E9074B71D9227 /* DevvyLiveActivityBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DevvyLiveActivityBundle.swift; sourceTree = "<group>"; };
 		8A8739520C25479CD6B75429 /* XTOL_1_1_250.rcp */ = {isa = PBXFileReference; path = XTOL_1_1_250.rcp; sourceTree = "<group>"; };
 		8CD7B98D7C15E83AD74D10EB /* RecipeEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeEditorView.swift; sourceTree = "<group>"; };
+		9019CA5420C610BE396EB480 /* StepCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StepCard.swift; sourceTree = "<group>"; };
 		92BCC7894128BA2E3298B47F /* Chime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Chime.swift; sourceTree = "<group>"; };
 		9767779BB652DFC0A0032D2A /* NotificationScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationScheduler.swift; sourceTree = "<group>"; };
 		9F024F61C7AAB442ED7216F0 /* SharedStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedStore.swift; sourceTree = "<group>"; };
@@ -153,6 +155,7 @@
 				77A49EC4E0BA0B6121C8DA75 /* RecipeListView.swift */,
 				63BBF85C28D3A18FD4AA47DC /* RootView.swift */,
 				1AC1AFDD9A7AE57555C023B0 /* StartTankSheet.swift */,
+				9019CA5420C610BE396EB480 /* StepCard.swift */,
 				09B37A085865B09B8530CDC2 /* TankIndicator.swift */,
 				A5A9C1D3257F3AE231ADB4B2 /* TankPresenter.swift */,
 				DB7F08D8645A356F685317AF /* TanksView.swift */,
@@ -336,6 +339,7 @@
 				E479D035A88EA406977682AC /* SeedRecipes.swift in Sources */,
 				6CEFA69430614C2B861900C3 /* SharedStore.swift in Sources */,
 				E24C72FA61C0898C5C540CDB /* StartTankSheet.swift in Sources */,
+				6C896652EB285BECF36490A9 /* StepCard.swift in Sources */,
 				D4918423463764E914F57A63 /* TankIndicator.swift in Sources */,
 				9AE52AD450814E8CC2D641AF /* TankPresenter.swift in Sources */,
 				948A68B0AF93A0685A788912 /* TanksView.swift in Sources */,

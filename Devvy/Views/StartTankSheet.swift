@@ -25,6 +25,8 @@ struct StartTankSheet: View {
         _selectedRecipeId = State(initialValue: initialRecipeId)
     }
 
+    private var tint: Color { Color(hex: tintHex) }
+
     var body: some View {
         NavigationStack {
             Form {
@@ -102,8 +104,8 @@ struct StartTankSheet: View {
                                     .foregroundStyle(.secondary)
                                 Spacer()
                                 Text("\(abs(1 - factor).formatted(.percent.precision(.fractionLength(0...1))))")
-                                    .font(.footnote.monospacedDigit())
-                                    .foregroundStyle(factor < 1 ? .green : .orange)
+                                    .font(.footnote.monospacedDigit().weight(.semibold))
+                                    .foregroundStyle(tint)
                             }
                         }
                         if developerBelowMinimum(for: recipe) {
@@ -112,7 +114,7 @@ struct StartTankSheet: View {
                                 systemImage: "exclamationmark.triangle.fill"
                             )
                             .font(.footnote)
-                            .foregroundStyle(.orange)
+                            .foregroundStyle(tint)
                         }
                     } header: {
                         Text("Temperature")
@@ -120,18 +122,16 @@ struct StartTankSheet: View {
 
                     Section("Steps (\(recipe.steps.count))") {
                         ForEach(Array(recipe.steps.enumerated()), id: \.element.id) { idx, step in
-                            HStack {
-                                Text("\(idx + 1).")
-                                    .foregroundStyle(.secondary)
-                                    .monospacedDigit()
-                                Text(step.name)
-                                Spacer()
-                                Text(TimeFormat.clock(adjustedDuration(for: step, at: idx, recipe: recipe)))
-                                    .foregroundStyle(idx == 0 && abs(temperatureF - recipe.baseTemperatureF) > 0.05 ? .primary : .secondary)
-                                    .monospacedDigit()
-                                    .contentTransition(.numericText())
-                            }
+                            StepCard(
+                                index: idx,
+                                step: step,
+                                displayDuration: adjustedDuration(for: step, at: idx, recipe: recipe),
+                                highlightDuration: idx == 0 && abs(temperatureF - recipe.baseTemperatureF) > 0.05
+                            )
                         }
+                    }
+
+                    Section {
                         HStack {
                             Text("Total")
                                 .font(.subheadline.weight(.semibold))
@@ -144,9 +144,24 @@ struct StartTankSheet: View {
                     }
                 }
             }
+            .scrollContentBackground(.hidden)
+            .background {
+                LinearGradient(
+                    colors: [
+                        tint.opacity(0.28),
+                        tint.opacity(0.12),
+                        tint.opacity(0.04),
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .ignoresSafeArea()
+            }
             .animation(.devvyFast, value: temperatureF)
+            .animation(.easeInOut(duration: 0.35), value: tintHex)
             .navigationTitle("Start a Tank")
             .navigationBarTitleDisplayMode(.inline)
+            .tint(tint)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button("Cancel") { dismiss() }

@@ -140,12 +140,9 @@ struct TemperatureField: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(alignment: .firstTextBaseline) {
-                Text("Temperature")
-                    .font(.subheadline.weight(.semibold))
-                Spacer()
-                HStack(alignment: .lastTextBaseline, spacing: 6) {
+        HStack(alignment: .center) {
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(alignment: .lastTextBaseline, spacing: 4) {
                     Text(temperatureF.formatted(.number.precision(.fractionLength(0...1))))
                         .font(.title2.weight(.semibold).monospacedDigit())
                         .contentTransition(.numericText(value: temperatureF))
@@ -153,16 +150,14 @@ struct TemperatureField: View {
                         .font(.title3.weight(.semibold))
                         .foregroundStyle(.secondary)
                 }
-            }
-            HStack {
                 Text("\(celsius.formatted(.number.precision(.fractionLength(0...1))))°C")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
                     .contentTransition(.numericText(value: celsius))
-                Spacer()
-                Stepper(value: fBinding, in: 50...90, step: 1) { EmptyView() }
-                    .labelsHidden()
             }
+            Spacer()
+            Stepper(value: fBinding, in: 50...90, step: 1) { EmptyView() }
+                .labelsHidden()
         }
         .padding(.vertical, 4)
         .animation(.devvyFast, value: temperatureF)
