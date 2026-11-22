@@ -142,27 +142,31 @@ struct TimerCardView: View {
                             systemImage: session.isPaused ? "play.fill" : "pause.fill"
                         )
                         .frame(maxWidth: .infinity)
+                        .padding(.vertical, 4)
                         .contentTransition(.symbolEffect(.replace))
                     }
                     .buttonStyle(.glass)
-                    .controlSize(.small)
+                    .controlSize(.large)
+                    .buttonBorderShape(.capsule)
+                    .transition(.scale(scale: 0.85).combined(with: .opacity))
+                } else {
+                    // Only offered once the step's time is up.
+                    Button {
+                        Haptics.tap()
+                        Task { await app.advance(session) }
+                    } label: {
+                        Label(
+                            session.stepIndex + 1 >= session.steps.count ? "Finish" : "Next",
+                            systemImage: "forward.end.fill"
+                        )
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 4)
+                    }
+                    .buttonStyle(.glassProminent)
+                    .controlSize(.large)
                     .buttonBorderShape(.capsule)
                     .transition(.scale(scale: 0.85).combined(with: .opacity))
                 }
-
-                Button {
-                    Haptics.tap()
-                    Task { await app.advance(session) }
-                } label: {
-                    Label(
-                        session.stepIndex + 1 >= session.steps.count ? "Finish" : "Next",
-                        systemImage: "forward.end.fill"
-                    )
-                    .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.glassProminent)
-                .controlSize(.small)
-                .buttonBorderShape(.capsule)
             }
             .animation(.bouncy(duration: 0.5, extraBounce: 0.12), value: stepElapsed)
         }

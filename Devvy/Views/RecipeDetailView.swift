@@ -33,7 +33,7 @@ struct RecipeDetailView: View {
                             .foregroundStyle(.secondary)
                     }
                 }
-                Section("Steps (\(recipe.steps.count))") {
+                Section("Steps") {
                     ForEach(Array(recipe.steps.enumerated()), id: \.element.id) { idx, step in
                         StepCard(index: idx, step: step)
                     }
@@ -58,12 +58,18 @@ struct RecipeDetailView: View {
                     Button("Edit", systemImage: "square.and.pencil") {
                         editingRecipe = recipe
                     }
-                    Button("Delete", systemImage: "trash", role: .destructive) {
+                    Button("Duplicate", systemImage: "doc.on.doc") {
+                        Haptics.tap()
+                        app.duplicateRecipe(recipe)
+                    }
+                    Button(role: .destructive) {
                         app.deleteRecipe(recipe)
                         dismiss()
+                    } label: {
+                        DestructiveLabel("Delete", systemImage: "trash")
                     }
                 } label: {
-                    Image(systemName: "ellipsis.circle")
+                    Image(systemName: "ellipsis")
                 }
             }
         }

@@ -120,7 +120,7 @@ struct StartTankSheet: View {
                         Text("Temperature")
                     }
 
-                    Section("Steps (\(recipe.steps.count))") {
+                    Section("Steps") {
                         ForEach(Array(recipe.steps.enumerated()), id: \.element.id) { idx, step in
                             StepCard(
                                 index: idx,
@@ -166,21 +166,45 @@ struct StartTankSheet: View {
                 ToolbarItem(placement: .topBarLeading) {
                     Button("Cancel") { dismiss() }
                 }
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Start") { start() }
-                        .disabled(!canStart)
-                        .buttonStyle(.glassProminent)
+            }
+            .safeAreaInset(edge: .bottom) {
+                Button {
+                    start()
+                } label: {
+                    Label("Start", systemImage: "play.fill")
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 4)
                 }
+                .buttonStyle(.glassProminent)
+                .controlSize(.large)
+                .disabled(!canStart)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 12)
             }
             .onAppear {
                 if selectedRecipeId == nil {
-                    selectedRecipeId = app.recipes.first?.id
+                    // Prefer last-used recipe (if still around), then fall
+                    // back to the first available.
+                    if let lastId = AppState.lastUsedRecipeId,
+                       app.recipes.contains(where: { $0.id == lastId }) {
+                        selectedRecipeId = lastId
+                    } else {
+                        selectedRecipeId = app.recipes.first?.id
+                    }
                 }
                 if tankLabel.isEmpty {
                     tankLabel = AppState.suggestedTankLabel(existing: app.sessions)
                 }
-                if let r = selectedRecipe, !temperatureWasEdited {
-                    temperatureF = r.baseTemperatureF
+                if !temperatureWasEdited {
+                    // Last-used temperature wins so the user doesn't have to
+                    // re-dial it every session. Mark as "edited" so swapping
+                    // recipes won't snap it back to the recipe baseline.
+                    if let lastTemp = AppState.lastUsedTemperatureF {
+                        temperatureF = lastTemp
+                        temperatureWasEdited = true
+                    } else if let r = selectedRecipe {
+                        temperatureF = r.baseTemperatureF
+                    }
                 }
             }
             .onChange(of: selectedRecipeId) { _, _ in

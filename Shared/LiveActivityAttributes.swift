@@ -19,6 +19,9 @@ public struct DevvyActivityAttributes: ActivityAttributes {
         /// overlay "Agitate {countdown}" at the right moments without push
         /// updates — it drives a TimelineView off these dates.
         public var agitationCycles: [AgitationCycle]
+        /// Tank tint as a hex string (no `#`). Lets the widget render its
+        /// chrome in the same color as the tank in-app.
+        public var tintHex: String?
 
         public init(
             stepIndex: Int,
@@ -29,7 +32,8 @@ public struct DevvyActivityAttributes: ActivityAttributes {
             pausedRemaining: TimeInterval?,
             nextStepName: String?,
             tankLabel: String,
-            agitationCycles: [AgitationCycle] = []
+            agitationCycles: [AgitationCycle] = [],
+            tintHex: String? = nil
         ) {
             self.stepIndex = stepIndex
             self.stepCount = stepCount
@@ -40,6 +44,7 @@ public struct DevvyActivityAttributes: ActivityAttributes {
             self.nextStepName = nextStepName
             self.tankLabel = tankLabel
             self.agitationCycles = agitationCycles
+            self.tintHex = tintHex
         }
 
         public var isPaused: Bool { pausedRemaining != nil }

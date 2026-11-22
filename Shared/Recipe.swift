@@ -172,11 +172,11 @@ extension Step {
     /// Returns the agitation cycles for this step, given a wall-clock anchor
     /// for when the step started (or "would have started" if paused).
     /// - Initial agitation produces one cycle from anchor to anchor+initial.
-    /// - Recurring cycles are at anchor+interval, anchor+2*interval, ...,
-    ///   each lasting agitationDuration seconds. Any cycle whose start lies
-    ///   inside the initial-agitation window is skipped (no overlapping
-    ///   schedules); the first recurring cycle in that case is the next
-    ///   interval boundary after the initial ends.
+    /// - Recurring cycles wait a *full* interval after the initial ends and
+    ///   then repeat every `agitationInterval` seconds. So for a step with
+    ///   `initialAgitation = 30` and `agitationInterval = 60`, the first
+    ///   recurring cycle starts at t=90s (not t=60s), giving a clean minute
+    ///   of stillness between agitations.
     public func agitationCycles(stepStartedAt: Date) -> [AgitationCycle] {
         var cycles: [AgitationCycle] = []
 
@@ -192,15 +192,13 @@ extension Step {
             let interval = TimeInterval(agitationInterval)
             let dur = TimeInterval(agitationDuration)
             let initial = TimeInterval(initialAgitation)
-            var t = interval
+            var t = initial + interval
             while t + dur <= duration + 0.5 {
-                if t >= initial {
-                    cycles.append(AgitationCycle(
-                        startsAt: stepStartedAt.addingTimeInterval(t),
-                        endsAt: stepStartedAt.addingTimeInterval(t + dur),
-                        isInitial: false
-                    ))
-                }
+                cycles.append(AgitationCycle(
+                    startsAt: stepStartedAt.addingTimeInterval(t),
+                    endsAt: stepStartedAt.addingTimeInterval(t + dur),
+                    isInitial: false
+                ))
                 t += interval
             }
         }

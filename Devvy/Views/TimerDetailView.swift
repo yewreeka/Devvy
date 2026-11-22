@@ -74,11 +74,13 @@ struct TimerDetailView: View {
                     Button("Restart Step", systemImage: "arrow.counterclockwise") {
                         Task { await app.restartCurrentStep(session) }
                     }
-                    Button("Stop Tank", systemImage: "xmark", role: .destructive) {
+                    Button(role: .destructive) {
                         Task {
                             await app.stop(session)
                             dismiss()
                         }
+                    } label: {
+                        DestructiveLabel("Stop Tank", systemImage: "xmark")
                     }
                 } label: {
                     Image(systemName: "ellipsis.circle")
@@ -231,21 +233,23 @@ struct TimerDetailView: View {
                     .buttonBorderShape(.circle)
                     .accessibilityLabel(session.isPaused ? "Resume" : "Pause")
                     .transition(.scale(scale: 0.85).combined(with: .opacity))
+                } else {
+                    // Only offered once the step's time is up.
+                    Button {
+                        Haptics.tap()
+                        Task { await app.advance(session) }
+                    } label: {
+                        Label(
+                            session.stepIndex + 1 >= session.steps.count ? "Finish" : "Next Step",
+                            systemImage: "forward.end.fill"
+                        )
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 4)
+                    }
+                    .buttonStyle(.glassProminent)
+                    .controlSize(.large)
+                    .transition(.scale(scale: 0.85).combined(with: .opacity))
                 }
-
-                Button {
-                    Haptics.tap()
-                    Task { await app.advance(session) }
-                } label: {
-                    Label(
-                        session.stepIndex + 1 >= session.steps.count ? "Finish" : "Next Step",
-                        systemImage: "forward.end.fill"
-                    )
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 4)
-                }
-                .buttonStyle(.glassProminent)
-                .controlSize(.large)
             }
         }
         .padding(.vertical, 4)

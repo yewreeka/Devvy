@@ -14,11 +14,13 @@
 		3F35C965A22755018DE60A7D /* TimerIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31898F30931E8BE75A9465F3 /* TimerIntents.swift */; };
 		57472F486617D68E14736024 /* NotificationScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9767779BB652DFC0A0032D2A /* NotificationScheduler.swift */; };
 		588C93F3AC6D947A19B844DB /* SharedStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F024F61C7AAB442ED7216F0 /* SharedStore.swift */; };
+		59097745725E10FB3F2E2E67 /* Color+Hex.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD42C8383B370235DA76F98A /* Color+Hex.swift */; };
 		5C380385A699FC5A201722B9 /* Recipe.swift in Sources */ = {isa = PBXBuildFile; fileRef = C086198FF1D4923F9F965FCA /* Recipe.swift */; };
 		690C72572604BD54A683081D /* LiveActivityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46F1928A5FC3519B43AFB874 /* LiveActivityManager.swift */; };
 		6C896652EB285BECF36490A9 /* StepCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9019CA5420C610BE396EB480 /* StepCard.swift */; };
 		6CEFA69430614C2B861900C3 /* SharedStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F024F61C7AAB442ED7216F0 /* SharedStore.swift */; };
 		8B4934DB104F7B4F3688327E /* XTOL_1_1_250.rcp in Resources */ = {isa = PBXBuildFile; fileRef = 8A8739520C25479CD6B75429 /* XTOL_1_1_250.rcp */; };
+		90CE2E9F3BE731790FD33DC3 /* Color+Hex.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD42C8383B370235DA76F98A /* Color+Hex.swift */; };
 		948A68B0AF93A0685A788912 /* TanksView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB7F08D8645A356F685317AF /* TanksView.swift */; };
 		96BAE92899CEDE3FF5C1FB9E /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36C80B7263292441505D2B55 /* AppState.swift */; };
 		97A99675245EA92567A9C9A4 /* NotificationScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9767779BB652DFC0A0032D2A /* NotificationScheduler.swift */; };
@@ -98,6 +100,7 @@
 		A386E87D34D380D44A2B485B /* Devvy.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Devvy.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A5A9C1D3257F3AE231ADB4B2 /* TankPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TankPresenter.swift; sourceTree = "<group>"; };
 		AA86BD623E9EA2B7952A9468 /* RecipeDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeDetailView.swift; sourceTree = "<group>"; };
+		AD42C8383B370235DA76F98A /* Color+Hex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Color+Hex.swift"; sourceTree = "<group>"; };
 		C086198FF1D4923F9F965FCA /* Recipe.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Recipe.swift; sourceTree = "<group>"; };
 		CAF8726A0F7692B251B2349E /* DevvyLiveActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DevvyLiveActivity.swift; sourceTree = "<group>"; };
 		D6E6E20F09B014783141E452 /* Helpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Helpers.swift; sourceTree = "<group>"; };
@@ -114,6 +117,7 @@
 		0124DFAE1CDEE98876E58924 /* Shared */ = {
 			isa = PBXGroup;
 			children = (
+				AD42C8383B370235DA76F98A /* Color+Hex.swift */,
 				73CBA544F7AD7419EDBE8524 /* CountdownText.swift */,
 				7977609E6A553A69BD8413B6 /* LiveActivityAttributes.swift */,
 				9767779BB652DFC0A0032D2A /* NotificationScheduler.swift */,
@@ -306,6 +310,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				59097745725E10FB3F2E2E67 /* Color+Hex.swift in Sources */,
 				B4AA52372284EB42F5D0128C /* CountdownText.swift in Sources */,
 				16AD0DB642A07977BB157975 /* DevvyLiveActivity.swift in Sources */,
 				CBDAE9885263FD39BA86898A /* DevvyLiveActivityBundle.swift in Sources */,
@@ -324,6 +329,7 @@
 			files = (
 				96BAE92899CEDE3FF5C1FB9E /* AppState.swift in Sources */,
 				CAA7A1FE172937A3BA108460 /* Chime.swift in Sources */,
+				90CE2E9F3BE731790FD33DC3 /* Color+Hex.swift in Sources */,
 				A21B660BFE1914C88DAA0418 /* CountdownText.swift in Sources */,
 				282ACDC7F05763A676932342 /* DevvyApp.swift in Sources */,
 				C1EFD34E33DA703546225590 /* Helpers.swift in Sources */,

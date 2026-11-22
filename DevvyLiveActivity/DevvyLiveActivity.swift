@@ -10,15 +10,18 @@ struct DevvyLiveActivity: Widget {
                 .activityBackgroundTint(Color.black.opacity(0.85))
                 .activitySystemActionForegroundColor(Color.white)
         } dynamicIsland: { context in
-            DynamicIsland {
+            let tint = Color(hex: context.state.tintHex ?? "F46453")
+            return DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(context.attributes.recipeName)
-                            .font(.caption.weight(.semibold))
-                            .lineLimit(1)
                         Text(context.state.tankLabel)
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(tint)
+                            .lineLimit(1)
+                        Text(context.attributes.recipeName)
                             .font(.caption2)
                             .foregroundStyle(.secondary)
+                            .lineLimit(1)
                     }
                 }
                 DynamicIslandExpandedRegion(.trailing) {
@@ -33,23 +36,23 @@ struct DevvyLiveActivity: Widget {
                 }
                 DynamicIslandExpandedRegion(.bottom) {
                     HStack(spacing: 12) {
-                        pauseResumeButton(context: context, expanded: true)
-                        nextButton(context: context, expanded: true)
+                        pauseResumeButton(context: context, tint: tint)
+                        nextButton(context: context, tint: tint)
                     }
                     .padding(.top, 4)
                 }
             } compactLeading: {
                 Image(systemName: "timer")
-                    .foregroundStyle(.tint)
+                    .foregroundStyle(tint)
             } compactTrailing: {
                 timerText(context.state)
                     .font(.caption.weight(.semibold).monospacedDigit())
                     .frame(maxWidth: 56)
             } minimal: {
                 Image(systemName: context.state.isPaused ? "pause.fill" : "timer")
-                    .foregroundStyle(.tint)
+                    .foregroundStyle(tint)
             }
-            .keylineTint(.accentColor)
+            .keylineTint(tint)
         }
     }
 
@@ -67,7 +70,7 @@ struct DevvyLiveActivity: Widget {
     @ViewBuilder
     private func pauseResumeButton(
         context: ActivityViewContext<DevvyActivityAttributes>,
-        expanded: Bool
+        tint: Color
     ) -> some View {
         if context.state.isFinished || context.state.stepHasElapsed(at: .now) {
             EmptyView()
@@ -75,33 +78,34 @@ struct DevvyLiveActivity: Widget {
             Button(intent: ResumeTimerIntent(sessionId: context.attributes.sessionId)) {
                 Label("Resume", systemImage: "play.fill")
             }
-            .tint(.green)
+            .tint(tint)
         } else {
             Button(intent: PauseTimerIntent(sessionId: context.attributes.sessionId)) {
                 Label("Pause", systemImage: "pause.fill")
             }
-            .tint(.orange)
+            .tint(tint)
         }
     }
 
     @ViewBuilder
     private func nextButton(
         context: ActivityViewContext<DevvyActivityAttributes>,
-        expanded: Bool
+        tint: Color
     ) -> some View {
         if context.state.isFinished {
             Button(intent: StopTimerIntent(sessionId: context.attributes.sessionId)) {
                 Label("Finish", systemImage: "checkmark")
             }
-            .tint(.accentColor)
-        } else {
+            .tint(tint)
+        } else if context.state.stepHasElapsed(at: .now) {
+            // Only offered once the step's time is up.
             Button(intent: NextStepIntent(sessionId: context.attributes.sessionId)) {
                 Label(
                     context.state.stepIndex + 1 >= context.state.stepCount ? "Finish" : "Next Step",
                     systemImage: "forward.end.fill"
                 )
             }
-            .tint(.accentColor)
+            .tint(tint)
         }
     }
 }
@@ -114,6 +118,7 @@ private struct LockScreenView: View {
     var body: some View {
         let state = context.state
         let progress = stepProgress(state)
+        let tint = Color(hex: state.tintHex ?? "F46453")
 
         // TimelineView re-renders the surrounding view at each agitation cycle
         // boundary so the "Agitate" overlay can flip on/off without us pushing
@@ -128,7 +133,7 @@ private struct LockScreenView: View {
                     Text(state.tankLabel.uppercased())
                         .font(.caption2.weight(.bold))
                         .tracking(1.2)
-                        .foregroundStyle(.tint)
+                        .foregroundStyle(tint)
                     Text("·")
                         .foregroundStyle(.white.opacity(0.4))
                     Text(context.attributes.recipeName)
@@ -138,7 +143,7 @@ private struct LockScreenView: View {
                     Spacer()
                     Image(systemName: "drop.halffull")
                         .font(.caption)
-                        .foregroundStyle(.tint)
+                        .foregroundStyle(tint)
                 }
 
                 HStack(alignment: .firstTextBaseline) {
@@ -146,7 +151,7 @@ private struct LockScreenView: View {
                         if let cycle = currentAgit {
                             Text("Agitate")
                                 .font(.title3.weight(.bold))
-                                .foregroundStyle(.tint)
+                                .foregroundStyle(tint)
                             Text(state.stepName)
                                 .font(.caption2)
                                 .foregroundStyle(.white.opacity(0.6))
@@ -161,14 +166,14 @@ private struct LockScreenView: View {
                                 .lineLimit(1)
                             if let cycle = headsUp {
                                 HStack(spacing: 4) {
-                                    Image(systemName: "bell.badge")
-                                        .font(.caption2)
+                                    Image(systemName: "arrow.triangle.2.circlepath")
+                                        .font(.caption2.weight(.semibold))
                                     Text("Agitate in ")
                                         .font(.caption2)
                                     CountdownText(now: timeline.date, endsAt: cycle.startsAt)
                                         .font(.caption2.monospacedDigit())
                                 }
-                                .foregroundStyle(.tint)
+                                .foregroundStyle(tint)
                             } else {
                                 Text("Step \(state.stepIndex + 1) of \(state.stepCount)")
                                     .font(.caption2)
@@ -180,7 +185,7 @@ private struct LockScreenView: View {
                     if let cycle = currentAgit {
                         CountdownText(now: timeline.date, endsAt: cycle.endsAt)
                             .font(.system(.title, design: .rounded).weight(.bold).monospacedDigit())
-                            .foregroundStyle(.tint)
+                            .foregroundStyle(tint)
                     } else {
                         timerView(state: state)
                             .font(.system(.title, design: .rounded).weight(.bold).monospacedDigit())
@@ -190,15 +195,16 @@ private struct LockScreenView: View {
 
                 ProgressView(value: progress)
                     .progressViewStyle(.linear)
-                    .tint(currentAgit == nil ? Color.accentColor : Color.orange)
+                    .tint(tint)
 
                 HStack(spacing: 10) {
                     if state.isFinished {
                         Button(intent: StopTimerIntent(sessionId: context.attributes.sessionId)) {
                             Label("Finish Tank", systemImage: "checkmark.circle.fill")
                                 .frame(maxWidth: .infinity)
+                                .padding(.vertical, 4)
                         }
-                        .tint(.accentColor)
+                        .tint(tint)
                     } else {
                         let stepElapsed = state.stepHasElapsed(at: timeline.date)
                         if !stepElapsed {
@@ -206,28 +212,32 @@ private struct LockScreenView: View {
                                 Button(intent: ResumeTimerIntent(sessionId: context.attributes.sessionId)) {
                                     Label("Resume", systemImage: "play.fill")
                                         .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 4)
                                 }
-                                .tint(.green)
+                                .tint(tint)
                             } else {
                                 Button(intent: PauseTimerIntent(sessionId: context.attributes.sessionId)) {
                                     Label("Pause", systemImage: "pause.fill")
                                         .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 4)
                                 }
-                                .tint(.orange)
+                                .tint(tint)
                             }
+                        } else {
+                            // Only offered once the step's time is up.
+                            Button(intent: NextStepIntent(sessionId: context.attributes.sessionId)) {
+                                Label(
+                                    state.stepIndex + 1 >= state.stepCount ? "Finish" : "Next",
+                                    systemImage: "forward.end.fill"
+                                )
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 4)
+                            }
+                            .tint(tint)
                         }
-
-                        Button(intent: NextStepIntent(sessionId: context.attributes.sessionId)) {
-                            Label(
-                                state.stepIndex + 1 >= state.stepCount ? "Finish" : "Next",
-                                systemImage: "forward.end.fill"
-                            )
-                            .frame(maxWidth: .infinity)
-                        }
-                        .tint(.accentColor)
                     }
                 }
-                .controlSize(.small)
+                .controlSize(.large)
                 .buttonBorderShape(.capsule)
             }
             .padding(.horizontal, 16)

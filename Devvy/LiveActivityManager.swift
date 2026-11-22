@@ -109,7 +109,8 @@ enum LiveActivityManager {
             pausedRemaining: session.pausedRemaining,
             nextStepName: session.nextStep?.name,
             tankLabel: session.tankLabel,
-            agitationCycles: session.agitationCycles
+            agitationCycles: session.agitationCycles,
+            tintHex: session.tintHex
         )
     }
 }

@@ -95,14 +95,16 @@ struct TanksView: View {
                 }
             }
 
-            Button {
-                Haptics.tap()
-                Task { await app.advance(session) }
-            } label: {
-                Label(
-                    session.stepIndex + 1 >= session.steps.count ? "Finish Step" : "Next Step",
-                    systemImage: "forward.end.fill"
-                )
+            if session.stepHasElapsed() {
+                Button {
+                    Haptics.tap()
+                    Task { await app.advance(session) }
+                } label: {
+                    Label(
+                        session.stepIndex + 1 >= session.steps.count ? "Finish Step" : "Next Step",
+                        systemImage: "forward.end.fill"
+                    )
+                }
             }
 
             Button {
@@ -119,7 +121,7 @@ struct TanksView: View {
             Haptics.warning()
             Task { await app.stop(session) }
         } label: {
-            Label("Stop Tank", systemImage: "xmark")
+            DestructiveLabel("Stop Tank", systemImage: "xmark")
         }
     }
 }

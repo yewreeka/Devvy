@@ -31,28 +31,6 @@ extension Color {
         })
     }
 
-    init(hex: String) {
-        var s = hex.trimmingCharacters(in: .whitespacesAndNewlines)
-        if s.hasPrefix("#") { s.removeFirst() }
-        var v: UInt64 = 0
-        Scanner(string: s).scanHexInt64(&v)
-        let r, g, b, a: Double
-        switch s.count {
-        case 6:
-            r = Double((v >> 16) & 0xFF) / 255
-            g = Double((v >> 8) & 0xFF) / 255
-            b = Double(v & 0xFF) / 255
-            a = 1
-        case 8:
-            r = Double((v >> 24) & 0xFF) / 255
-            g = Double((v >> 16) & 0xFF) / 255
-            b = Double((v >> 8) & 0xFF) / 255
-            a = Double(v & 0xFF) / 255
-        default:
-            r = 1; g = 1; b = 1; a = 1
-        }
-        self = Color(.sRGB, red: r, green: g, blue: b, opacity: a)
-    }
 }
 
 extension TimerSession {
@@ -76,6 +54,30 @@ struct Haptics {
         #if canImport(UIKit)
         UINotificationFeedbackGenerator().notificationOccurred(.warning)
         #endif
+    }
+}
+
+/// A `Label` that tints its icon red to match the text color of a
+/// `Button(role: .destructive)`. SwiftUI's role styling colors the text but
+/// leaves SF Symbols in the menu's default tint — this label closes that
+/// gap so destructive actions look consistently destructive throughout the
+/// app (icon + label both red).
+struct DestructiveLabel: View {
+    let title: String
+    let systemImage: String
+
+    init(_ title: String, systemImage: String) {
+        self.title = title
+        self.systemImage = systemImage
+    }
+
+    var body: some View {
+        Label {
+            Text(title)
+        } icon: {
+            Image(systemName: systemImage)
+                .foregroundStyle(.red)
+        }
     }
 }
 

@@ -72,7 +72,7 @@ struct RecipeListView: View {
                         Haptics.warning()
                         app.deleteRecipe(recipe)
                     } label: {
-                        Label("Delete", systemImage: "trash")
+                        DestructiveLabel("Delete", systemImage: "trash")
                     }
                 }
             }

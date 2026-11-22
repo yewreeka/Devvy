@@ -224,6 +224,13 @@ final class AppState {
         session.liveActivityId = activityId
         SharedStore.shared.upsertSession(session)
         NotificationScheduler.reschedule(for: session)
+        // Remember the user's last choices so the next "Start a Tank" sheet
+        // can pre-fill them — most users develop the same film at the same
+        // temperature day after day.
+        Self.lastUsedRecipeId = recipe.id
+        if let tempF = temperatureF {
+            Self.lastUsedTemperatureF = tempF
+        }
         refresh()
         return session
     }
@@ -287,6 +294,41 @@ final class AppState {
             SharedStore.shared.upsertSession(session)
         }
         if !updated.isEmpty { refresh() }
+    }
+
+    // MARK: - Last-used preferences
+
+    private static let lastRecipeKey = "devvy.lastUsedRecipeId"
+    private static let lastTempKey = "devvy.lastUsedTemperatureF"
+
+    /// Persisted across launches via UserDefaults — app-local (no need to
+    /// share with the widget extension).
+    static var lastUsedRecipeId: UUID? {
+        get {
+            guard let s = UserDefaults.standard.string(forKey: lastRecipeKey) else { return nil }
+            return UUID(uuidString: s)
+        }
+        set {
+            if let id = newValue {
+                UserDefaults.standard.set(id.uuidString, forKey: lastRecipeKey)
+            } else {
+                UserDefaults.standard.removeObject(forKey: lastRecipeKey)
+            }
+        }
+    }
+
+    static var lastUsedTemperatureF: Double? {
+        get {
+            guard UserDefaults.standard.object(forKey: lastTempKey) != nil else { return nil }
+            return UserDefaults.standard.double(forKey: lastTempKey)
+        }
+        set {
+            if let v = newValue {
+                UserDefaults.standard.set(v, forKey: lastTempKey)
+            } else {
+                UserDefaults.standard.removeObject(forKey: lastTempKey)
+            }
+        }
     }
 
     // MARK: - Helpers
